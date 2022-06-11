@@ -1,5 +1,5 @@
 FROM registry.cn-beijing.aliyuncs.com/longtds/oraclejdk:8u221
-RUN wget http://archive.apache.org/dist/hadoop/core/hadoop-3.2.3/hadoop-3.2.3.tar.gz \
+RUN wget https://mirrors.aliyun.com/apache/hadoop/core/hadoop-3.3.3/hadoop-3.3.3.tar.gz \
   && tar xvf hadoop-3.2.3.tar.gz && rm -f hadoop-3.2.3.tar.gz && mv hadoop-3.2.3 /opt/hadoop \
   && rm /opt/hadoop/share/doc -rf
 ENV HADOOP_HOME="/opt/hadoop" HADOOP_CONF_DIR="/opt/hadoop/etc/hadoop" HADOOP_LOG_DIR="/opt/hadoop/logs" JAVA_LIBRARY_PATH="/opt/hadoop/lib/native" LD_LIBRARY_PATH="/opt/hadoop/lib/native"
