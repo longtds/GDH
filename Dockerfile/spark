@@ -10,7 +10,7 @@ RUN cd /tmp && wget https://mirrors.aliyun.com/apache/spark/spark-3.1.2/spark-3.
 FROM registry.cn-beijing.aliyuncs.com/longtds/hadoop:3.2.3
 COPY --from=builder /opt/spark-3.1.2-bin-hadoop3.2 /opt/spark
 COPY --from=builder /opt/scala-2.12.13 /opt/scala
-COPY --from=builder /opt/apache-maven-3.6.3-bin /opt/maven
+COPY --from=builder /opt/apache-maven-3.6.3 /opt/maven
 ENV SCALA_HOME="/opt/scala" MAVEN_HOME="/opt/maven" SPARK_HOME="/opt/spark" SPARK_CONF_DIR="$SPARK_HOME/conf"
 ENV PATH="$PATH:$SCALA_HOME/bin:$SPARK_HOME/bin:$SPARK_HOME/sbini:$MAVEN_HOME/bin"
 COPY ./pom.xml /tmp
