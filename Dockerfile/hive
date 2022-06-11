@@ -3,9 +3,9 @@ RUN cd /tmp && wget https://mirrors.aliyun.com/apache/hive/hive-3.1.2/apache-hiv
   && tar xvf apache-hive-3.1.2-bin.tar.gz -C /opt \
   && wget https://shared.obs.cn-north-1.myhuaweicloud.com/GDH/mysql-connector-java-8.0.28.tar.gz \
   && tar xvf mysql-connector-java-8.0.28.tar.gz -C /opt \
-  && mv /opt/mysql-connector-java-8.0.28/mysql-connector-java-8.0.28.jar /opt/apache-hive-3.1.2/lib/
+  && mv /opt/mysql-connector-java-8.0.28/mysql-connector-java-8.0.28.jar /opt/apache-hive-3.1.2-bin/lib/
 
 FROM registry.cn-beijing.aliyuncs.com/longtds/hadoop:3.2.3
-COPY --from=builder /opt/apache-hive-3.1.2 /opt/hive
+COPY --from=builder /opt/apache-hive-3.1.2-bin /opt/hive
 ENV HIVE_HOME="/opt/hive" HIVE_CONF_DIR="/opt/hive/conf"
 ENV PATH="$PATH:$HIVE_HOME/bin"
