@@ -1,13 +1,16 @@
-FROM registry.cn-beijing.aliyuncs.com/longtds/hadoop:3.2.3
-RUN wget https://mirrors.aliyun.com/apache/spark/spark-3.1.2/spark-3.1.2-bin-hadoop3.2.tgz \
-  && tar xvf spark-3.1.2-bin-hadoop3.2.tgz && rm spark-3.1.2-bin-hadoop3.2.tgz -f \
-  && mv spark-3.1.2-bin-hadoop3.2 /opt/spark \
+FROM registry.cn-beijing.aliyuncs.com/longtds/hadoop:3.2.3 as builder
+RUN cd /tmp && wget https://mirrors.aliyun.com/apache/spark/spark-3.1.2/spark-3.1.2-bin-hadoop3.2.tgz \
+  && tar xvf spark-3.1.2-bin-hadoop3.2.tgz -C /opt \
   && wget https://downloads.lightbend.com/scala/2.12.13/scala-2.12.13.tgz \
-  && tar xvf scala-2.12.13.tgz && rm scala-2.12.13.tgz -f && mv scala-2.12.13 /opt/scala \
+  && tar xvf scala-2.12.13.tgz -C /opt \
   && wget https://mirrors.aliyun.com/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz \
-  && tar xvf apache-maven-3.6.3-bin.tar.gz && rm apache-maven-3.6.3-bin.tar.gz -f \
-  && mv apache-maven-3.6.3-bin /opt/maven
+  && tar xvf apache-maven-3.6.3-bin.tar.gz -C /opt
 
+
+FROM registry.cn-beijing.aliyuncs.com/longtds/hadoop:3.2.3
+COPY --from=builder /opt/spark-3.1.2-bin-hadoop3.2 /opt/spark
+COPY --from=builder /opt/scala-2.12.13 /opt/scala
+COPY --from=builder /opt/apache-maven-3.6.3-bin /opt/maven
 ENV SCALA_HOME="/opt/scala" MAVEN_HOME="/opt/maven" SPARK_HOME="/opt/spark" SPARK_CONF_DIR="$SPARK_HOME/conf"
 ENV PATH="$PATH:$SCALA_HOME/bin:$SPARK_HOME/bin:$SPARK_HOME/sbini:$MAVEN_HOME/bin"
 COPY ./pom.xml /tmp
