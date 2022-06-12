@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resourcemanager2
+  labels:
+    app.kubernetes.io/name: resourcemanager2
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: resourcemanager2
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: resourcemanager2
+    spec:
+      containers:
+        - name: resourcemanager2
+          image: Placeholder_registry/bigdata-allinnoe:v0.3
+          imagePullPolicy: Always
+          resources:
+          env:
+            - name: HADOOP_SSH_OPTS
+              value: "-o StrictHostKeyChecking=no -o ConnectTimeout=10s -p 9431"
+            - name: LD_LIBRARY_PATH
+              value: "/opt/hadoop/lib/native"
+            - name: HADOOP_COMMON_LIB_NATIVE_DIR
+              value: "/opt/hadoop/lib/native"
+          command:
+            - "sh"
+            - "-c"
+            - "yarn --daemon start resourcemanager && tail -f /opt/hadoop/logs/*"
+          volumeMounts:
+            - name: localtime
+              mountPath: /etc/localtime
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/core-site.xml
+              subPath: core-site.xml
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/hdfs-site.xml
+              subPath: hdfs-site.xml
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/yarn-site.xml
+              subPath: yarn-site.xml
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/mapred-site.xml
+              subPath: mapred-site.xml
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - "sh"
+                  - "-c"
+                  - "yarn --daemon stop resourcemanager"
+      volumes:
+        - name: localtime
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+        - name: hadoop-config
+          configMap:
+            name: hadoop-config
+      restartPolicy: Always
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector:
+        rm2: "true"
+      tolerations:
+        - key: "project"
+          value: "gdbdc"
+          operator: "Equal"
+          effect: "NoSchedule"
+--- 
+apiVersion: v1
+kind: Service
+metadata:
+  name: resourcemanager2
+  labels:
+    app.kubernetes.io/name: resourcemanager2
+spec:
+  selector:
+    app.kubernetes.io/name: resourcemanager2
+  ports:
+  - port: 8088
+    targetPort: 8088
+    name: resourcemanager

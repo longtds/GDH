@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spark-on-yarn
+  labels:
+    app.kubernetes.io/name: spark-on-yarn
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spark-on-yarn
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: spark-on-yarn
+    spec:
+      initContainers:
+        - name: upload-spark-libs
+          image: Placeholder_registry/bigdata-allinnoe:v0.3
+          imagePullPolicy: Always
+          command:
+            - "sh"
+            - "-c"
+            - "hadoop fs -ls /spark-libs;if [ $? -ne 0 ];then hadoop fs -mkdir /spark-libs && echo 'Created /spark-libs'; jar cv0f spark-libs.jar -C $SPARK_HOME/jars/ .; hadoop fs -put spark-libs.jar /spark-libs/ && echo 'Uploaded jars to /spark-libs';fi"
+          volumeMounts:
+            - name: localtime
+              mountPath: /etc/localtime
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/core-site.xml
+              subPath: core-site.xml
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/hdfs-site.xml
+              subPath: hdfs-site.xml
+      containers:
+        - name: spark
+          image: Placeholder_registry/bigdata-allinnoe:v0.3
+          imagePullPolicy: Always
+          resources:
+          env:
+            - name: ROOT_PWD
+              value: "gistack@2022"
+            - name: SSH_PORT
+              value: "12222"
+            - name: TASK_SERVER_IP
+              value: "datadevs-core-server.gdmp:8080"
+          command:
+            - bash
+            - -ec
+            - |
+              echo "root:$ROOT_PWD" | chpasswd
+              /opt/spark/sbin/start-thriftserver.sh --master yarn --packages io.delta:delta-core_2.12:0.8.0 --conf "spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension" --conf "spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog" --conf spark.scheduler.mode=FAIR --conf spark.scheduler.pool=test --conf spark.scheduler.allocation.file=/opt/spark/conf/fairscheduler.xml
+              /usr/sbin/sshd -D -p $SSH_PORT
+              # 添加app服务前台进程,需要把sshd中的-D去掉
+              # /root/.ivy2/app/jdk-11/bin/java -jar /root/.ivy2/app/datadevs-task-worker/boot/datadevs-task-worker.jar
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - "sh"
+                  - "-c"
+                  - "kill -9 `ps -ef | grep '/usr/sbin/sshd' | grep -v grep | awk '{print $2}'`"
+                  # 如果添加了app服务前台进程,需要把'/usr/sbin/sshd'替换为'/root/.ivy2/app'
+          volumeMounts:
+            - name: localtime
+              mountPath: /etc/localtime
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/core-site.xml
+              subPath: core-site.xml
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/hdfs-site.xml
+              subPath: hdfs-site.xml
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/yarn-site.xml
+              subPath: yarn-site.xml
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/mapred-site.xml
+              subPath: mapred-site.xml
+            - name: hive-config
+              mountPath: /opt/spark/conf/hive-site.xml
+              subPath: hive-site.xml
+            - name: spark-config
+              mountPath: /opt/spark/conf/spark-defaults.conf
+              subPath: spark-defaults.conf
+            - mountPath: /opt/spark/conf/fairscheduler.xml
+              name: spark-config
+              subPath: fairscheduler.xml
+            - name: spark-data
+              mountPath: /root/.ivy2
+      volumes:
+        - name: localtime
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+        - name: hadoop-config
+          configMap:
+            name: hadoop-config
+        - name: hive-config
+          configMap:
+            name: hive-config
+        - name: spark-config
+          configMap:
+            name: spark-config
+        - name: spark-data
+          hostPath:
+            path: /data/spark
+      restartPolicy: Always
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      nodeSelector:
+        spark: "true"
+      tolerations:
+        - key: "project"
+          value: "gdbdc"
+          operator: "Equal"
+          effect: "NoSchedule"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spark-on-yarn
+  labels:
+    app.kubernetes.io/name: spark-on-yarn
+spec:
+  selector:
+    app.kubernetes.io/name: spark-on-yarn
+  ports:
+  - port: 10000
+    targetPort: 10000
+    name: thrift

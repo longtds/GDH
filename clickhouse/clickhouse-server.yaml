@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clickhouse
+  labels:
+    app.kubernetes.io/name: clickhouse
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: clickhouse
+  replicas: 4
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: clickhouse
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: clickhouse
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: clickhouse
+          image: Placeholder_registry/clickhouse-server:22.3.6
+          imagePullPolicy: IfNotPresent
+          resources:
+          volumeMounts:
+            - name: localtime
+              mountPath: /etc/localtime
+            - name: clickhouse-data
+              mountPath: /var/lib/clickhouse
+            - name: clickhouse-config
+              mountPath: /etc/clickhouse-server/config.xml
+              subPath: config.xml
+            - name: clickhouse-config
+              mountPath: /etc/clickhouse-server/metrika.xml
+              subPath: metrika.xml
+      volumes:
+        - name: localtime
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+        - name: clickhouse-data
+          hostPath:
+            path: /data/clickhouse
+        - name: clickhouse-config
+          configMap:
+            name: clickhouse-config
+      restartPolicy: Always
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      nodeSelector:
+        clickhouse: "true"
+      tolerations:
+        - key: "project"
+          value: "gdbdc"
+          operator: "Equal"
+          effect: "NoSchedule"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickhouse
+  labels:
+    app.kubernetes.io/name: clickhouse
+spec:
+  selector:
+    app.kubernetes.io/name: clickhouse
+  type: ClusterIP
+  ports:
+    - name: clickhouse
+      protocol: TCP
+      port: 8123

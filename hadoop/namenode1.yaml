@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: namenode1
+  labels:
+    app.kubernetes.io/name: namenode1
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: namenode1
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: namenode1
+    spec:
+      initContainers:
+        - name: dfs-init
+          image: Placeholder_registry/bigdata-allinnoe:v0.3
+          imagePullPolicy: Always
+          command:
+            - bash
+            - -ec
+            - |
+              if [ ! -d /dfs/nn ];then
+                mkdir -p /dfs/nn
+                hdfs namenode -format
+                hdfs zkfc -formatZK
+              else
+                ls /dfs/nn/current
+              fi
+          volumeMounts:
+            - name: localtime
+              mountPath: /etc/localtime
+            - name: dfs
+              mountPath: /dfs
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/core-site.xml
+              subPath: core-site.xml
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/hdfs-site.xml
+              subPath: hdfs-site.xml
+      containers:
+        - name: namenode
+          image: Placeholder_registry/bigdata-allinnoe:v0.3
+          imagePullPolicy: Always
+          resources:
+          env:
+            - name: HADOOP_SSH_OPTS
+              value: "-o StrictHostKeyChecking=no -o ConnectTimeout=10s -p 9431"
+            - name: LD_LIBRARY_PATH
+              value: "/opt/hadoop/lib/native"
+            - name: HADOOP_COMMON_LIB_NATIVE_DIR
+              value: "/opt/hadoop/lib/native"
+          command:
+            - "sh"
+            - "-c"
+            - "hdfs --daemon start namenode && tail -f /opt/hadoop/logs/*"
+          volumeMounts:
+            - name: localtime
+              mountPath: /etc/localtime
+            - name: dfs
+              mountPath: /dfs
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/core-site.xml
+              subPath: core-site.xml
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/hdfs-site.xml
+              subPath: hdfs-site.xml
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/yarn-site.xml
+              subPath: yarn-site.xml
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/mapred-site.xml
+              subPath: mapred-site.xml
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - "sh"
+                  - "-c"
+                  - "hdfs --daemon start zkfc"
+            preStop:
+              exec:
+                command:
+                  - "sh"
+                  - "-c"
+                  - "hdfs --daemon stop namenode && hdfs --daemon stop zkfc"
+      volumes:
+        - name: localtime
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+        - name: dfs
+          hostPath:
+            path: /data/dfs
+        - name: hadoop-config
+          configMap:
+            name: hadoop-config
+      restartPolicy: Always
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector:
+        nn1: "true"
+      tolerations:
+        - key: "project"
+          value: "gdbdc"
+          operator: "Equal"
+          effect: "NoSchedule"
+--- 
+apiVersion: v1
+kind: Service
+metadata:
+  name: namenode1
+  labels:
+    app.kubernetes.io/name: namenode1
+spec:
+  selector:
+    app.kubernetes.io/name: namenode1
+  ports:
+  - port: 8020
+    targetPort: 8020
+    name: namenode

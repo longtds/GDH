@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hive-metastore
+  labels:
+    app.kubernetes.io/name: hive-metastore
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hive-metastore
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hive-metastore
+    spec:
+      initContainers:
+        - name: mysql-init
+          image: Placeholder_registry/bigdata-allinnoe:v0.3
+          imagePullPolicy: Always
+          command:
+            - "sh"
+            - "-c"
+            - "schematool -dbType mysql -validate;if [ $? -ne 0 ];then schematool -dbType mysql -initSchema --verbose;fi"
+          volumeMounts:
+            - name: localtime
+              mountPath: /etc/localtime
+            - name: hive-config
+              mountPath: /opt/hive/conf/hive-site.xml
+              subPath: hive-site.xml
+      containers:
+        - name: hive-metastore
+          image: Placeholder_registry/bigdata-allinnoe:v0.3
+          imagePullPolicy: Always
+          resources:
+          command:
+            - "sh"
+            - "-c"
+            - "hive --service metastore -v"
+          volumeMounts:
+            - name: localtime
+              mountPath: /etc/localtime
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/core-site.xml
+              subPath: core-site.xml
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/hdfs-site.xml
+              subPath: hdfs-site.xml
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/yarn-site.xml
+              subPath: yarn-site.xml
+            - name: hadoop-config
+              mountPath: /opt/hadoop/etc/hadoop/mapred-site.xml
+              subPath: mapred-site.xml
+            - name: hive-config
+              mountPath: /opt/hive/conf/hive-site.xml
+              subPath: hive-site.xml
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - "sh"
+                  - "-c"
+                  - "kill $(ps -ef | grep metastore | grep -v grep | awk '{print $2}')"
+          
+      volumes:
+        - name: localtime
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+        - name: hadoop-config
+          configMap:
+            name: hadoop-config
+        - name: hive-config
+          configMap:
+            name: hive-config
+      restartPolicy: Always
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      nodeSelector:
+        hive: "true"
+      tolerations:
+        - key: "project"
+          value: "gdbdc"
+          operator: "Equal"
+          effect: "NoSchedule"
+--- 
+apiVersion: v1
+kind: Service
+metadata:
+  name: hive-metastore
+  labels:
+    app.kubernetes.io/name: hive-metastore
+spec:
+  selector:
+    app.kubernetes.io/name: hive-metastore
+  ports:
+  - port: 9093
+    targetPort: 9093
+    name: hive

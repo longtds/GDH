@@ -1,0 +1,40 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: spark-config
+  labels:
+    app.kubernetes.io/name: spark
+data:
+  fairscheduler.xml: |-
+    <?xml version="1.0"?>
+    <allocations>
+      <pool name="production">
+        <schedulingMode>FAIR</schedulingMode>
+        <weight>5</weight>
+        <minShare>4</minShare>
+      </pool>
+      <pool name="test">
+        <schedulingMode>FAIR</schedulingMode>
+        <weight>5</weight>
+        <minShare>4</minShare>
+      </pool>
+    </allocations>
+  spark-defaults.conf: |-
+    spark.eventLog.enabled                     true
+    spark.eventLog.dir                         hdfs://Placeholder_nn1_node:8020/spark-logs
+    spark.eventLog.compress                    true
+    spark.serializer                           org.apache.spark.serializer.KryoSerializer
+    spark.master                               yarn
+    spark.driver.cores                         2
+    spark.driver.memory                        4G
+    spark.executor.cores                       1
+    spark.executor.memory                      2G
+    spark.executor.memoryOverhead              1024MB
+    spark.executor.instances                   2
+    spark.sql.warehouse.dir                    hdfs://Placeholder_nn1_node:8020/user/hive/warehouse
+    spark.yarn.historyServer.address           Placeholder_spark_history_node:18080
+    spark.history.ui.port                      18080
+    spark.history.fs.logDirectory              hdfs://Placeholder_nn1_node:8020/spark-logs
+    spark.yarn.archive                         hdfs://Placeholder_nn1_node:8020/spark-libs/spark-libs.jar
+    spark.scheduler.mode                       FAIR
+    spark.scheduler.pool                       test

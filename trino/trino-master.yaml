@@ -1,0 +1,126 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: trino-master
+  name: trino-master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: trino-master
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: trino-master
+      name: trino-master
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: trino-master
+              topologyKey: kubernetes.io/hostname
+      initContainers:
+        - name: volume-permissions
+          image: Placeholder_registry/bitnami-shell:10
+          imagePullPolicy: "IfNotPresent"
+          command:
+            - /bin/bash
+          args:
+            - -ec
+            - |
+              mkdir -p /data/trino
+              chown -R 1000:1000 /data/trino
+          volumeMounts:
+            - name: trino-data
+              mountPath: /data/trino
+      containers:
+        - name: trino-master
+          image: Placeholder_registry/trino:385
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+          command:
+            - bash
+            - -ec
+            - |
+              NODE_ID="-Dnode.id=$(echo $HOST_IP |awk -F . '{print $4}')"
+              exec /usr/lib/trino/bin/launcher run --etc-dir /etc/trino ${NODE_ID} "$@"
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - /usr/lib/trino/bin/launcher stop --etc-dir /etc/trino
+          resources:
+          volumeMounts:
+            - mountPath: /data/trino
+              name: trino-data
+            - mountPath: /etc/trino/config.properties
+              name: trino-config
+              subPath: coordinator.config.properties
+            - mountPath: /etc/trino/log.properties
+              name: trino-config
+              subPath: log.properties
+            - mountPath: /etc/trino/jvm.config
+              name: trino-config
+              subPath: jvm.config
+            - mountPath: /etc/trino/catalog/jmx.properties
+              name: trino-config
+              subPath: jmx.properties
+            - mountPath: /etc/trino/catalog/hive.properties
+              name: trino-config
+              subPath: hive.properties
+            - mountPath: /etc/trino/catalog/delta.properties
+              name: trino-config
+              subPath: delta.properties
+            - mountPath: /etc/hadoop/core-site.xml
+              name: hadoop-config
+              subPath: core-site.xml
+            - mountPath: /etc/hadoop/hdfs-site.xml
+              name: hadoop-config
+              subPath: hdfs-site.xml
+      volumes:
+        - hostPath:
+            path: /data/trino
+          name: trino-data
+        - configMap:
+            defaultMode: 420
+            name: trino-config
+          name: trino-config
+        - configMap:
+            defaultMode: 420
+            name: hadoop-config
+          name: hadoop-config
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      restartPolicy: Always
+      nodeSelector:
+        trino-m: "true"
+      tolerations:
+        - effect: NoSchedule
+          operator: Equal
+          key: "project"
+          value: "gdbdc"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trino
+  labels:
+    app.kubernetes.io/name: trino
+spec:
+  selector:
+    app.kubernetes.io/name: trino-master
+  type: ClusterIP
+  ports:
+  - name: trino
+    protocol: TCP
+    port: 8082
