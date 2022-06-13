@@ -7,7 +7,7 @@ registry=registry.cn-beijing.aliyuncs.com/jtyj
 bigdata_namespace=bigdata
 
 # Component node allocation, you can view the node name through "kubectl get node"
-# zookeeper node selector，3 nodes recommended
+# zookeeper node selector, 3 nodes recommended
 zookeeper_node=(node3 node4 node5)
 
 # hadoop node selector
@@ -29,7 +29,7 @@ kafka_node=(node1 node2 node3)
 trino_master_node=(node5)
 trino_worker_node=(node1 node2)
 
-# clickhouse node selector，Currently only supports 4 nodes
+# clickhouse node selector, Currently only supports 4 nodes
 clickhouse_node=(node2 node3 node4 node5)
 
 # Password configuration

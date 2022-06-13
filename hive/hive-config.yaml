@@ -15,7 +15,7 @@ data:
         </property>
         <property>
             <name>javax.jdo.option.ConnectionPassword</name>
-            <value>gistack@2022</value>
+            <value>Placeholder_hive_password</value>
         </property>
         <property>
             <name>javax.jdo.option.ConnectionURL</name>

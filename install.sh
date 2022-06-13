@@ -192,7 +192,8 @@ check_replicas nodemanager ${#datanode_node[@]}
 # Deploy hive configuration
 hive_node_ip=$(get_nodeIP ${hive_node[0]})
 
-sed "s#Placeholder_hive_node#${hive_node_ip}#g" \
+sed -e "s#Placeholder_hive_node#${hive_node_ip}#g" \
+    -e "s#Placeholder_hive_password#${hive_mysql_hive_password}#g" \
     hive/hive-config.yaml | kubectl apply -f -
 
 # Deploy hive mysql
