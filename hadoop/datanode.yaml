@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: datanode
-          image: Placeholder_registry/bigdata-allinnoe:v0.3
+          image: Placeholder_registry/bigdata:v0.1
           imagePullPolicy: Always
           resources:
           env:

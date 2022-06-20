@@ -16,7 +16,7 @@ spec:
     spec:
       initContainers:
         - name: mysql-init
-          image: Placeholder_registry/bigdata-allinnoe:v0.3
+          image: Placeholder_registry/bigdata:v0.1
           imagePullPolicy: Always
           command:
             - "sh"
@@ -30,7 +30,7 @@ spec:
               subPath: hive-site.xml
       containers:
         - name: hive-metastore
-          image: Placeholder_registry/bigdata-allinnoe:v0.3
+          image: Placeholder_registry/bigdata:v0.1
           imagePullPolicy: Always
           resources:
           command:

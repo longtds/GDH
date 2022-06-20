@@ -16,7 +16,7 @@ spec:
     spec:
       initContainers:
         - name: spark-logs
-          image: Placeholder_registry/bigdata-allinnoe:v0.3
+          image: Placeholder_registry/bigdata:v0.1
           imagePullPolicy: Always
           command:
             - "sh"
@@ -33,7 +33,7 @@ spec:
               subPath: hdfs-site.xml
       containers:
         - name: spark-historyserver
-          image: Placeholder_registry/bigdata-allinnoe:v0.3
+          image: Placeholder_registry/bigdata:v0.1
           imagePullPolicy: Always
           resources:
           command:
