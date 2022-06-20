@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Mirror warehouse address, which can be used directly with public network environment
-registry=registry.cn-beijing.aliyuncs.com/jtyj
+registry=registry.cn-beijing.aliyuncs.com/longtds
 
 # Deployment namespace
 bigdata_namespace=bigdata
