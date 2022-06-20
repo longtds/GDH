@@ -1,11 +1,11 @@
 FROM centos:7 as builder
 RUN yum install wget -y
-RUN cd /tmp && wget https://shared.obs.cn-north-1.myhuaweicloud.com/GDH/jdk-8u221-linux-x64.tar.gz &&
-    tar xvf jdk-8u221-linux-x64.tar.gz -C /opt/
+RUN cd /tmp && wget https://shared.obs.cn-north-1.myhuaweicloud.com/GDH/jdk-8u221-linux-x64.tar.gz \
+    && tar xvf jdk-8u221-linux-x64.tar.gz -C /opt/
 
 FROM centos:7
-RUN yum install net-tools lsof vim iproute wget epel-release openssh-server openssh-clients sudo -y &&
-    yum install openssl-devel zlib-devel snappy-devel libzstd-devel -y && rm /var/cache -rf &&
+RUN yum install net-tools lsof vim iproute wget epel-release openssh-server openssh-clients sudo -y && \
+    yum install openssl-devel zlib-devel snappy-devel libzstd-devel -y && rm /var/cache -rf && \
     echo -e "* hard nofile 102400\n* soft nofile 102400\n* hard nproc 65535\n* soft nproc 65535" \
         >>/etc/security/limits.conf && ssh-keygen -A
 COPY --from=builder /opt/jdk1.8.0_221 /opt/jdk

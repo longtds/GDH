@@ -1,9 +1,9 @@
 FROM registry.cn-beijing.aliyuncs.com/longtds/hadoop:3.2.3 as builder
-RUN cd /tmp && wget https://mirrors.aliyun.com/apache/spark/spark-3.1.2/spark-3.1.2-bin-hadoop3.2.tgz &&
-    tar xvf spark-3.1.2-bin-hadoop3.2.tgz -C /opt &&
-    wget https://downloads.lightbend.com/scala/2.12.13/scala-2.12.13.tgz &&
-    tar xvf scala-2.12.13.tgz -C /opt &&
-    wget https://mirrors.aliyun.com/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz &&
+RUN cd /tmp && wget https://mirrors.aliyun.com/apache/spark/spark-3.1.2/spark-3.1.2-bin-hadoop3.2.tgz && \
+    tar xvf spark-3.1.2-bin-hadoop3.2.tgz -C /opt && \
+    wget https://downloads.lightbend.com/scala/2.12.13/scala-2.12.13.tgz && \
+    tar xvf scala-2.12.13.tgz -C /opt && \
+    wget https://mirrors.aliyun.com/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz && \
     tar xvf apache-maven-3.6.3-bin.tar.gz -C /opt
 
 FROM registry.cn-beijing.aliyuncs.com/longtds/hadoop:3.2.3
